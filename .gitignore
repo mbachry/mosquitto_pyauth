@@ -1,0 +1,3 @@
+*.pyc
+*.o
+auth_plugin_pyauth.so
