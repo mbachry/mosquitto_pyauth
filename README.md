@@ -38,5 +38,5 @@ Python module
 Python module should do required initializations when it's imported
 and provide following global functions:
 
-* `unpwd_check_func(username, password)`: return `True` if given
+* `unpwd_check(username, password)`: return `True` if given
   username and password pair is allowed to log in
