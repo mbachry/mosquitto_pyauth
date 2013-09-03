@@ -117,7 +117,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *au
             fprintf(stderr, "pyauth plugin_cleanup failed\n");
             PyErr_Print();
         }
-        Py_DECREF(res);
+        Py_XDECREF(res);
     }
 
     Py_DECREF(data->module);
