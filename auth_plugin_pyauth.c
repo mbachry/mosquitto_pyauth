@@ -16,7 +16,7 @@ struct pyauth_data {
 #define unused  __attribute__((unused))
 
 #ifdef PYAUTH_DEBUG
-__attribute__((format(1, 2)))
+__attribute__((format(printf, 1, 2)))
 static void debug(const char *fmt, ...)
 {
     va_list ap;
@@ -31,6 +31,17 @@ static void debug(const char *fmt unused, ...)
 }
 #endif
 
+__attribute__((format(printf, 2, 3)))
+static void die(bool print_exception, const char *fmt, ...)
+{
+    if (print_exception)
+        PyErr_Print();
+    va_list ap;
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    fputc('\n', stderr);
+    exit(1);
+}
 
 int mosquitto_auth_plugin_version(void)
 {
@@ -48,20 +59,45 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
             debug("pyauth_module = %s", data->module_name);
         }
     }
-    if (data->module_name == NULL) {
-        fprintf(stderr, "pyauth_module config param missing\n");
-        exit(1);
-    }
+    if (data->module_name == NULL)
+        die(false, "pyauth_module config param missing");
 
     Py_Initialize();
 
     data->module = PyImport_ImportModule(data->module_name);
-    if (data->module == NULL) {
-        fprintf(stderr, "failed to import module: %s\n", data->module_name);
-        exit(1);
-    }
+    if (data->module == NULL)
+        die(true, "failed to import module: %s", data->module_name);
 
     data->unpwd_check_func = PyObject_GetAttrString(data->module, "unpwd_check");
+
+    PyObject *init_func = PyObject_GetAttrString(data->module, "plugin_init");
+    if (init_func != NULL) {
+        PyObject *optlist = PyTuple_New(auth_opt_count - 1); /* -1 because of skipped "pyauth_module" */
+        if (optlist == NULL)
+            die(true, "python module initialization failed");
+
+        int idx = 0;
+        for (int i = 0; i < auth_opt_count; i++) {
+            if (!strcmp(auth_opts[i].key, "pyauth_module"))
+                continue;
+
+            PyObject *elt = PyTuple_Pack(2,
+                                         PyString_FromString(auth_opts[i].key),
+                                         PyString_FromString(auth_opts[i].value));
+            if (elt == NULL)
+                die(true, "python module initialization failed");
+
+            PyTuple_SET_ITEM(optlist, idx++, elt);
+        }
+
+        PyObject *res = PyObject_CallFunctionObjArgs(init_func, optlist, NULL);
+        if (res == NULL)
+                die(true, "python module initialization failed");
+        Py_DECREF(res);
+
+        Py_DECREF(optlist);
+        Py_DECREF(init_func);
+    }
 
     *user_data = data;
     return MOSQ_ERR_SUCCESS;

@@ -38,5 +38,9 @@ Python module
 Python module should do required initializations when it's imported
 and provide following global functions:
 
+* `plugin_init(opts)`: called on plugin init, `opts` holds a tuple of
+  (key, value) 2-tuples with all `auth_opt_` params from mosquitto
+  configuration (except `auth_opt_pyauth_module`)
+
 * `unpwd_check(username, password)`: return `True` if given
   username and password pair is allowed to log in
