@@ -46,3 +46,7 @@ and provide following global functions:
 
 * `unpwd_check(username, password)`: return `True` if given
   username and password pair is allowed to log in
+
+* `acl_check(clientid, username, topic, access)`: return `True` if
+  given user is allowed to subscribe (`access = 1`) or publish
+  (`access = 2`) to given topic

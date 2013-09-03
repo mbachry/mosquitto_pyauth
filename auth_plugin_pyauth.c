@@ -12,6 +12,7 @@ struct pyauth_data {
     PyObject *module;
     PyObject *plugin_cleanup_func;
     PyObject *unpwd_check_func;
+    PyObject *acl_check_func;
 };
 
 #define unused  __attribute__((unused))
@@ -71,6 +72,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
 
     data->plugin_cleanup_func = PyObject_GetAttrString(data->module, "plugin_cleanup");
     data->unpwd_check_func = PyObject_GetAttrString(data->module, "unpwd_check");
+    data->acl_check_func = PyObject_GetAttrString(data->module, "acl_check");
 
     PyObject *init_func = PyObject_GetAttrString(data->module, "plugin_init");
     if (init_func != NULL) {
@@ -121,6 +123,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *au
     Py_DECREF(data->module);
     Py_XDECREF(data->plugin_cleanup_func);
     Py_XDECREF(data->unpwd_check_func);
+    Py_XDECREF(data->acl_check_func);
     free(data->module_name);
     free(data);
     return MOSQ_ERR_SUCCESS;
@@ -136,12 +139,22 @@ int mosquitto_auth_security_cleanup(void *user_data unused, struct mosquitto_aut
     return MOSQ_ERR_SUCCESS;
 }
 
-int mosquitto_auth_acl_check(void *user_data unused, const char *clientid unused, const char *username unused, const char *topic unused, int access)
+int mosquitto_auth_acl_check(void *user_data, const char *clientid, const char *username, const char *topic, int access)
 {
-    if (access == MOSQ_ACL_READ) {
-        return MOSQ_ERR_SUCCESS;
+    struct pyauth_data *data = user_data;
+
+    if (data->acl_check_func == NULL)
+        return MOSQ_ERR_ACL_DENIED;
+
+    PyObject *res = PyObject_CallFunction(data->acl_check_func, "sssi", clientid, username, topic, access);
+    if (res == NULL) {
+        PyErr_Print();
+        return MOSQ_ERR_UNKNOWN;
     }
-    return MOSQ_ERR_ACL_DENIED;
+    int ok = PyObject_IsTrue(res);
+    Py_DECREF(res);
+
+    return ok ? MOSQ_ERR_SUCCESS : MOSQ_ERR_ACL_DENIED;
 }
 
 int mosquitto_auth_unpwd_check(void *user_data, const char *username, const char *password)
