@@ -10,6 +10,7 @@
 struct pyauth_data {
     char *module_name;
     PyObject *module;
+    PyObject *plugin_cleanup_func;
     PyObject *unpwd_check_func;
 };
 
@@ -68,6 +69,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     if (data->module == NULL)
         die(true, "failed to import module: %s", data->module_name);
 
+    data->plugin_cleanup_func = PyObject_GetAttrString(data->module, "plugin_cleanup");
     data->unpwd_check_func = PyObject_GetAttrString(data->module, "unpwd_check");
 
     PyObject *init_func = PyObject_GetAttrString(data->module, "plugin_init");
@@ -106,7 +108,18 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
 int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *auth_opts unused, int auth_opt_count unused)
 {
     struct pyauth_data *data = user_data;
+
+    if (data->plugin_cleanup_func != NULL) {
+        PyObject *res = PyObject_CallFunction(data->plugin_cleanup_func, NULL);
+        if (res == NULL) {
+            fprintf(stderr, "pyauth plugin_cleanup failed\n");
+            PyErr_Print();
+        }
+        Py_DECREF(res);
+    }
+
     Py_DECREF(data->module);
+    Py_XDECREF(data->plugin_cleanup_func);
     Py_XDECREF(data->unpwd_check_func);
     free(data->module_name);
     free(data);
@@ -131,7 +144,7 @@ int mosquitto_auth_acl_check(void *user_data unused, const char *clientid unused
     return MOSQ_ERR_ACL_DENIED;
 }
 
-int mosquitto_auth_unpwd_check(void *user_data unused, const char *username, const char *password)
+int mosquitto_auth_unpwd_check(void *user_data, const char *username, const char *password)
 {
     struct pyauth_data *data = user_data;
 
