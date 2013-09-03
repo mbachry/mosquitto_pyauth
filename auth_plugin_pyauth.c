@@ -39,6 +39,7 @@ static void die(bool print_exception, const char *fmt, ...)
     if (print_exception)
         PyErr_Print();
     va_list ap;
+    va_start(ap, fmt);
     vfprintf(stderr, fmt, ap);
     va_end(ap);
     fputc('\n', stderr);
