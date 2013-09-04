@@ -6,6 +6,7 @@
 #include <Python.h>
 #include <mosquitto.h>
 #include <mosquitto_plugin.h>
+#include <dlfcn.h>
 
 struct pyauth_data {
     char *module_name;
@@ -65,6 +66,9 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     if (data->module_name == NULL)
         die(false, "pyauth_module config param missing");
 
+    /* workaround to allow imported C extensions access libpython
+     * symbols */
+    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL);
     Py_Initialize();
 
     data->module = PyImport_ImportModule(data->module_name);
