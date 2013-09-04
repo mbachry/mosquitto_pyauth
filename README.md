@@ -50,3 +50,9 @@ and provide following global functions:
 * `acl_check(clientid, username, topic, access)`: return `True` if
   given user is allowed to subscribe (`access = 1`) or publish
   (`access = 2`) to given topic
+
+* `security_init(opts, reload)`: called on plugin init and on config
+  reload
+
+* `security_cleanup(reload)`: called on plugin cleanup and on config
+  reload
