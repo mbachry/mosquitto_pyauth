@@ -1,5 +1,7 @@
-DEBUG = -DPYAUTH_DEBUG
-CFLAGS = -std=gnu99 -fPIC -I../lib `python-config --includes` -Wall -Wextra -ggdb3
+CFLAGS = -std=gnu99 -fPIC -I../lib `python-config --includes` -Wall -Wextra -O2
+ifdef DEBUG
+CFLAGS += -DPYAUTH_DEBUG -O0 -ggdb3
+endif
 LIBS = `python-config --libs`
 DESTDIR = /usr
 
@@ -13,7 +15,7 @@ auth_plugin_pyauth.so : auth_plugin_pyauth.o
 
 install: auth_plugin_pyauth.so
 	mkdir -p $(DESTDIR)/lib/mosquitto
-	install -m 755 auth_plugin_pyauth.so $(DESTDIR)/lib/mosquitto
+	install -s -m 755 auth_plugin_pyauth.so $(DESTDIR)/lib/mosquitto
 
 clean :
 	rm -f auth_plugin_pyauth.so *.o
