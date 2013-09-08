@@ -123,6 +123,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
         Py_DECREF(optlist);
         Py_DECREF(init_func);
     }
+    PyErr_Clear();
 
     *user_data = data;
     return MOSQ_ERR_SUCCESS;
