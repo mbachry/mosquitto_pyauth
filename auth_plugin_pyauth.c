@@ -16,6 +16,7 @@ struct pyauth_data {
     PyObject *acl_check_func;
     PyObject *security_init_func;
     PyObject *security_cleanup_func;
+    PyObject *psk_key_get_func;
 };
 
 #define unused  __attribute__((unused))
@@ -107,6 +108,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     data->acl_check_func = PyObject_GetAttrString(data->module, "acl_check");
     data->security_init_func = PyObject_GetAttrString(data->module, "security_init");
     data->security_cleanup_func = PyObject_GetAttrString(data->module, "security_cleanup");
+    data->psk_key_get_func = PyObject_GetAttrString(data->module, "psk_key_get");
     PyErr_Clear();  /* don't care about AttributeError from above code */
 
     PyObject *init_func = PyObject_GetAttrString(data->module, "plugin_init");
@@ -148,6 +150,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *au
     Py_XDECREF(data->acl_check_func);
     Py_XDECREF(data->security_init_func);
     Py_XDECREF(data->security_cleanup_func);
+    Py_XDECREF(data->psk_key_get_func);
     free(data->module_name);
     free(data);
     return MOSQ_ERR_SUCCESS;
