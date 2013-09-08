@@ -1,6 +1,6 @@
 DEBUG = -DPYAUTH_DEBUG
-CFLAGS = -std=gnu99 -fPIC -I../lib -I../src `python2.7-config --includes` -Wall -Wextra -ggdb3
-LIBS = `python2.7-config --libs`
+CFLAGS = -std=gnu99 -fPIC -I../lib -I../src `python-config --includes` -Wall -Wextra -ggdb3
+LIBS = `python-config --libs`
 
 all : auth_plugin_pyauth.so
 

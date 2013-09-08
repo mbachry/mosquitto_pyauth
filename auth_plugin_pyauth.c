@@ -20,6 +20,9 @@ struct pyauth_data {
 };
 
 #define unused  __attribute__((unused))
+#define STRINGIFY(x)  #x
+#define TOSTRING(x)  STRINGIFY(x)
+#define PY_SOLIB  "libpython" TOSTRING(PY_MAJOR_VERSION) "." TOSTRING(PY_MINOR_VERSION) ".so"
 
 #ifdef PYAUTH_DEBUG
 __attribute__((format(printf, 1, 2)))
@@ -128,7 +131,8 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
 
     /* workaround to allow imported C extensions access libpython
      * symbols */
-    dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL);
+    dlopen(PY_SOLIB, RTLD_LAZY|RTLD_GLOBAL);
+
     Py_Initialize();
     init_aux_module();
 
