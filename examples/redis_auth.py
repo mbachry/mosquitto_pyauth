@@ -9,18 +9,10 @@
 #   python redis_auth.py <username> <password> <allowed topic>
 
 import hashlib
-from ctypes import CDLL, c_char_p, c_bool, POINTER
 import redis
-
-libmosquitto = CDLL('libmosquitto.so')
-libmosquitto.mosquitto_topic_matches_sub.argtypes = [c_char_p, c_char_p, POINTER(c_bool)]
+import mosquitto_auth
 
 redis_conn = None
-
-def topic_matches_sub(sub, topic):
-    res = c_bool()
-    libmosquitto.mosquitto_topic_matches_sub(sub, topic, res)
-    return res.value
 
 def plugin_init(opts):
     global redis_conn
@@ -46,7 +38,7 @@ def acl_check(clientid, username, topic, access):
     if not pat:
         print 'ACL: no such user:', username
         return False
-    matches = topic_matches_sub(pat, topic)
+    matches = mosquitto_auth.topic_matches_sub(pat, topic)
     print 'ACL: user=%s topic=%s, matches = %s' % (username, topic, matches)
     return matches
 

@@ -48,11 +48,37 @@ and provide following global functions:
   username and password pair is allowed to log in
 
 * `acl_check(clientid, username, topic, access)`: return `True` if
-  given user is allowed to subscribe (`access = 1`) or publish
-  (`access = 2`) to given topic
+  given user is allowed to subscribe (`access =
+  mosquitto_auth.MOSQ_ACL_READ`) or publish (`access =
+  mosquitto_auth.MOSQ_ACL_WRITE`) to given topic (see `mosquitto_auth`
+  module below)
 
 * `security_init(opts, reload)`: called on plugin init and on config
   reload
 
 * `security_cleanup(reload)`: called on plugin cleanup and on config
   reload
+
+Auxiliary module
+================
+
+Authentication module can import an auxiliary module provided by mosquitto:
+
+    import mosquitto_auth
+
+The module provides following function:
+
+* `topic_matches_sub(sub, topic)`: it mirrors
+  `mosquitto_topic_matches_sub` from libmosquitto C library - the
+  function checks whether `topic` matches given `sub` pattern (for
+  example, it returns `True` if `sub` is `/foo/#` and `topic` is
+  `/foo/bar`) and is mostly useful is `acl_check` function above
+
+The following constants for `access` parameter in `acl_check` are
+provided:
+
+* MOSQ_ACL_NONE
+
+* MOSQ_ACL_READ
+
+* MOSQ_ACL_WRITE

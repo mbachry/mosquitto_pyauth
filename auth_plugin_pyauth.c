@@ -50,6 +50,38 @@ static void die(bool print_exception, const char *fmt, ...)
     exit(1);
 }
 
+/* Aux "mosquitto_auth" module */
+
+static PyObject *pyauth_mosquitto_topic_matches_sub(PyObject *self unused, PyObject *args)
+{
+    const char *sub;
+    const char *topic;
+
+    if (!PyArg_ParseTuple(args, "ss", &sub, &topic))
+        return NULL;
+
+    bool res;
+    mosquitto_topic_matches_sub(sub, topic, &res);
+
+    return PyBool_FromLong(res);
+}
+
+static PyMethodDef methods[] = {
+    {"topic_matches_sub", pyauth_mosquitto_topic_matches_sub, METH_VARARGS,
+     "Check whether a topic matches a subscription"},
+    {NULL, NULL, 0, NULL}
+};
+
+static void init_aux_module(void)
+{
+    PyObject *module = Py_InitModule("mosquitto_auth", methods);
+    PyModule_AddIntConstant(module, "MOSQ_ACL_NONE", MOSQ_ACL_NONE);
+    PyModule_AddIntConstant(module, "MOSQ_ACL_READ", MOSQ_ACL_READ);
+    PyModule_AddIntConstant(module, "MOSQ_ACL_WRITE", MOSQ_ACL_WRITE);
+}
+
+/* Plugin entry points */
+
 int mosquitto_auth_plugin_version(void)
 {
     return MOSQ_AUTH_PLUGIN_VERSION;
@@ -98,6 +130,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
      * symbols */
     dlopen("libpython2.7.so", RTLD_LAZY|RTLD_GLOBAL);
     Py_Initialize();
+    init_aux_module();
 
     data->module = PyImport_ImportModule(data->module_name);
     if (data->module == NULL)
