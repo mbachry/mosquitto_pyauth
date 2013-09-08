@@ -9,7 +9,8 @@ Compiling
 Make sure you have Python dev package installed (`apt-get install
 python-dev` under Debian/Ubuntu).
 
-Download mosquitto sources and clone this repository at the top of the
+You must either have mosquitto header files installed globally in
+`/usr/include`, etc. or clone this repository at the top of the
 mosquitto source directory. Then:
 
     cd mosquitto_pyauth
