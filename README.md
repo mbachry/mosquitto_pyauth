@@ -78,8 +78,8 @@ The module provides following function:
 The following constants for `access` parameter in `acl_check` are
 provided:
 
-* MOSQ_ACL_NONE
+* `MOSQ_ACL_NONE`
 
-* MOSQ_ACL_READ
+* `MOSQ_ACL_READ`
 
-* MOSQ_ACL_WRITE
+* `MOSQ_ACL_WRITE`
