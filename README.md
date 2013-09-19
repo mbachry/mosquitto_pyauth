@@ -6,6 +6,8 @@ Mosquitto auth plugin that lets you write your auth plugins in Python.
 Compiling
 =========
 
+You need mosquitto version 1.2.1 or higher.
+
 Make sure you have Python dev package installed (`apt-get install
 python-dev` under Debian/Ubuntu).
 

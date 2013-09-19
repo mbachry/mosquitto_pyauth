@@ -6,7 +6,10 @@
 #include <Python.h>
 #include <mosquitto.h>
 #include <mosquitto_plugin.h>
-#include <dlfcn.h>
+
+#if !defined(LIBMOSQUITTO_VERSION_NUMBER) || LIBMOSQUITTO_VERSION_NUMBER < 1002001
+#error "mosquitto 1.2.1 or higher is required"
+#endif
 
 struct pyauth_data {
     char *module_name;
@@ -20,9 +23,6 @@ struct pyauth_data {
 };
 
 #define unused  __attribute__((unused))
-#define STRINGIFY(x)  #x
-#define TOSTRING(x)  STRINGIFY(x)
-#define PY_SOLIB  "libpython" TOSTRING(PY_MAJOR_VERSION) "." TOSTRING(PY_MINOR_VERSION) ".so"
 
 #ifdef PYAUTH_DEBUG
 __attribute__((format(printf, 1, 2)))
@@ -128,10 +128,6 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     }
     if (data->module_name == NULL)
         die(false, "pyauth_module config param missing");
-
-    /* workaround to allow imported C extensions access libpython
-     * symbols */
-    dlopen(PY_SOLIB, RTLD_LAZY|RTLD_GLOBAL);
 
     Py_Initialize();
     init_aux_module();
