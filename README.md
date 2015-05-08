@@ -22,6 +22,15 @@ If all goes ok, there should be `auth_plugin_pyauth.so` file in the
 current directory. Copy it under path accessible for mosquitto daemon,
 e.g.: `/usr/local/lib/mosquitto/`.
 
+### Troubleshooting
+=======
+If you get errors while compiling the plugin about `-lmosquitto` then you have a missing link to libmosquitto.
+Just check the file `/usr/lib/libmosquitto.so` or `/usr/lib/mosquitto.so.1` exists and create a symlink:
+
+    ln -s /usr/lib/libmosquitto.so.1 /usr/lib/libmosquitto.so
+
+And make again the plugin. This time should work.
+
 Running
 =======
 
