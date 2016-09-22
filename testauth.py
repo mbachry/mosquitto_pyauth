@@ -21,6 +21,10 @@ def acl_check(clientid, username, topic, access):
         print 'acl_check WRITE', clientid, username, topic, access
     return True
 
+def psk_key_get(identity, hint):
+    print 'psk_key_get', identity, hint
+    return '0123456789'
+
 def security_init(opts, reload):
     print 'security_init', reload
     pprint(opts)
