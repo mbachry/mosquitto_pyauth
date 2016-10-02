@@ -277,13 +277,54 @@ int mosquitto_auth_unpwd_check(void *user_data, const char *username, const char
         PyErr_Print();
         return MOSQ_ERR_UNKNOWN;
     }
+
     int ok = PyObject_IsTrue(res);
     Py_DECREF(res);
 
     return ok ? MOSQ_ERR_SUCCESS : MOSQ_ERR_AUTH;
 }
 
-int mosquitto_auth_psk_key_get(void *user_data unused, const char *hint unused, const char *identity unused, char *key unused, int max_key_len unused)
+int mosquitto_auth_psk_key_get(void *user_data, const char *hint, const char *identity, char *key, int max_key_len)
 {
+    struct pyauth_data *data = user_data;
+    char psk[max_key_len];
+
+    if (identity == NULL)
+        return MOSQ_ERR_AUTH;
+
+    debug("mosquitto_auth_psk_key_get: identity=%s, hint=%s", identity, hint);
+
+    if (data->psk_key_get_func == NULL)
+        return MOSQ_ERR_AUTH;
+
+    PyObject *res = PyObject_CallFunction(data->psk_key_get_func, "ss", identity, hint);
+    if (res == NULL) {
+        PyErr_Print();
+        return MOSQ_ERR_UNKNOWN;
+    }
+
+    if (res == Py_None || !PyObject_IsTrue(res)) {
+        goto error;
+    }
+
+    int len = snprintf(psk, sizeof(psk), "%s", PyString_AsString(res));
+    if (len < 0) {
+        fprintf(stderr, "mosquitto_auth_psk_key_get: copy psk failed\n");
+        goto error;
+    }
+
+    if (len > max_key_len) {
+        fprintf(stderr, "mosquitto_auth_psk_key_get: psk length [%d] > max_key_len [%d]\n", len, max_key_len);
+        goto error;
+    }
+
+    debug("mosquitto_auth_psk_key_get: psk=%s", psk);
+    strncpy(key, psk, max_key_len);
+    Py_DECREF(res);
+
+    return MOSQ_ERR_SUCCESS;
+
+error:
+    Py_DECREF(res);
     return MOSQ_ERR_AUTH;
 }

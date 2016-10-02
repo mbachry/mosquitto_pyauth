@@ -70,6 +70,9 @@ and provide following global functions:
   mosquitto_auth.MOSQ_ACL_WRITE`) to given topic (see `mosquitto_auth`
   module below)
 
+* `psk_key_get(identity, hint)`: return `PSK` string (in hex format without heading 0x) if given
+  identity and hint pair is allowed to connect else return `False` or `None`
+
 * `security_init(opts, reload)`: called on plugin init and on config
   reload
 
