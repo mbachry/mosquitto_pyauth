@@ -75,13 +75,31 @@ static PyMethodDef methods[] = {
     {NULL, NULL, 0, NULL}
 };
 
-static void init_aux_module(void)
+#if PY_MAJOR_VERSION >= 3
+static struct PyModuleDef moduledef = {
+        .m_base = PyModuleDef_HEAD_INIT,
+        .m_name = "mosquitto_auth",
+        .m_methods = methods
+};
+#endif
+
+static PyObject *init_aux_module(void)
 {
+#if PY_MAJOR_VERSION >= 3
+    PyObject *module = PyModule_Create(&moduledef);
+#else
     PyObject *module = Py_InitModule("mosquitto_auth", methods);
+#endif
+    if (module == NULL)
+        return NULL;
+
     PyModule_AddIntConstant(module, "MOSQ_ACL_NONE", MOSQ_ACL_NONE);
     PyModule_AddIntConstant(module, "MOSQ_ACL_READ", MOSQ_ACL_READ);
     PyModule_AddIntConstant(module, "MOSQ_ACL_WRITE", MOSQ_ACL_WRITE);
+
+    return module;
 }
+
 
 /* Plugin entry points */
 
@@ -102,8 +120,8 @@ static PyObject *make_auth_opts_tuple(struct mosquitto_auth_opt *auth_opts, int 
             continue;
 
         PyObject *elt = PyTuple_Pack(2,
-                                     PyString_FromString(auth_opts[i].key),
-                                     PyString_FromString(auth_opts[i].value));
+                                     PyUnicode_FromString(auth_opts[i].key),
+                                     PyUnicode_FromString(auth_opts[i].value));
         if (elt == NULL) {
             Py_DECREF(optlist);
             return NULL;
@@ -129,8 +147,15 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     if (data->module_name == NULL)
         die(false, "pyauth_module config param missing");
 
+#if PY_MAJOR_VERSION >= 3
+    PyImport_AppendInittab("mosquitto_auth", &init_aux_module);
+#endif
+
     Py_Initialize();
-    init_aux_module();
+#if PY_MAJOR_VERSION < 3
+    if (init_aux_module() == NULL)
+        die(false, "failed to initialize auxiliary module");
+#endif
 
     data->module = PyImport_ImportModule(data->module_name);
     if (data->module == NULL)
@@ -307,7 +332,15 @@ int mosquitto_auth_psk_key_get(void *user_data, const char *hint, const char *id
         goto error;
     }
 
-    int len = snprintf(psk, sizeof(psk), "%s", PyString_AsString(res));
+    if (!PyBytes_Check(res)) {
+        PyObject *res2 = PyUnicode_AsASCIIString(res);
+        if (res2 == NULL)
+            goto error;
+        Py_DECREF(res);
+        res = res2;
+    }
+
+    int len = snprintf(psk, sizeof(psk), "%s", PyBytes_AsString(res));
     if (len < 0) {
         fprintf(stderr, "mosquitto_auth_psk_key_get: copy psk failed\n");
         goto error;

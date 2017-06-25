@@ -9,7 +9,7 @@ Compiling
 You need mosquitto version 1.2.1 or higher.
 
 Make sure you have Python dev package installed (`apt-get install
-python-dev` under Debian/Ubuntu).
+python-dev` or `apt-get install python3-dev` under Debian/Ubuntu).
 
 You must either have mosquitto header files installed globally in
 `/usr/include`, etc. or clone this repository at the top of the
@@ -22,6 +22,11 @@ Alternatively you can pass full path to mosquitto sources using
 `MOSQUITTO_SRC` variable:
 
     make MOSQUITTO_SRC=/path/to/mosquitto-src
+
+Pass `PYTHON_VERSION` variable to compile with other other Python
+version than default (2.7):
+
+    make PYTHON_VERSION=3.6
 
 If all goes ok, there should be `auth_plugin_pyauth.so` file in the
 current directory. Copy it under path accessible for mosquitto daemon,

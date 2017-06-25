@@ -20,27 +20,35 @@ def plugin_init(opts):
     redis_host = conf.get('redis_host', '127.0.0.1')
     redis_port = conf.get('redis_port', 6379)
     redis_conn = redis.StrictRedis(redis_host, redis_port)
-    print 'redis initialized', redis_host, redis_port
+    print('redis initialized', redis_host, redis_port)
 
 def unpwd_check(username, password):
     val = redis_conn.hget('mosq.' + username, 'auth')
     if not val:
-        print 'AUTH: no such user:', username
+        print('AUTH: no such user:', username)
         return False
-    salt, hashed = val.split(':')
-    check = hashlib.sha1(salt + password).hexdigest()
+    salt, hashed = val.split(b':')
+    check = hashlib.sha1(salt + password.encode()).hexdigest().encode()
     ok = (check == hashed)
-    print 'AUTH: user=%s, password matches = %s' % (username, ok)
+    print('AUTH: user=%s, password matches = %s' % (username, ok))
     return ok
 
 def acl_check(clientid, username, topic, access):
+    if username is None:
+        print('AUTH required')
+        return False
     pat = redis_conn.hget('mosq.' + username, 'acl')
     if not pat:
-        print 'ACL: no such user:', username
+        print('ACL: no such user:', username)
         return False
-    matches = mosquitto_auth.topic_matches_sub(pat, topic)
-    print 'ACL: user=%s topic=%s, matches = %s' % (username, topic, matches)
+    matches = mosquitto_auth.topic_matches_sub(pat.decode(), topic)
+    print('ACL: user=%s topic=%s, matches = %s' % (username, topic, matches))
     return matches
+
+
+def psk_key_get(identity, hint):
+    print('psk_key_get', identity, hint)
+    return '0123456789'
 
 
 if __name__ == '__main__':
@@ -54,10 +62,10 @@ if __name__ == '__main__':
     except IndexError:
         sys.exit('redis_auth <username> <password> <allowed topic>')
     salt = ''.join(c for _ in range(6) for c in random.choice(string.ascii_letters))
-    hashed = hashlib.sha1(salt + password).hexdigest()
+    hashed = hashlib.sha1(salt.encode() + password.encode()).hexdigest()
     conn = redis.StrictRedis()
-    print 'HSET', 'mosq.' + username, 'auth', salt + ':' + hashed
+    print('HSET', 'mosq.' + username, 'auth', salt + ':' + hashed)
     conn.hset('mosq.' + username, 'auth', salt + ':' + hashed)
-    print 'HSET', 'mosq.' + username, 'acl', acl_topic
+    print('HSET', 'mosq.' + username, 'acl', acl_topic)
     conn.hset('mosq.' + username, 'acl', acl_topic)
-    print '%s: password set successfully' % username
+    print('%s: password set successfully' % username)
