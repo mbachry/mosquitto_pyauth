@@ -56,7 +56,7 @@ to the rescue):
 
 ### Optional
 Instead of specifying the search path for Python module in `PYTHONPATH` env variable,
-    Add the following line to `mosquitto.conf`:
+    add the following line to `mosquitto.conf`:
 
     auth_opt_pyauth_module_path /home/user/module_path
 
