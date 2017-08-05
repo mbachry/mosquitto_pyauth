@@ -54,16 +54,17 @@ to the rescue):
 
     auth_opt_pyauth_module some_module
 
-Optional
-    Instead of specifying the search path for Python module in `PYTHONPATH` env variable,
+##### Optional
+Instead of specifying the search path for Python module in `PYTHONPATH` env variable,
     Add the following line to `mosquitto.conf`:
 
-        auth_opt_pyauth_module_path /home/user/module_path
+    auth_opt_pyauth_module_path /home/user/module_path
 
-    Replace /home/user/module_path with the actual module path
+   Replace /home/user/module_path with the actual module path
 
-    auth_opt_pyauth_module_path is required if mosquitto broker is run using service e.g. sudo service mosquitto start
-    service strips all environment variables including PYTHONPATH
+   `auth_opt_pyauth_module_path` is required if mosquitto broker is run using `service` e.g. sudo service mosquitto start
+
+   `service` removes all environment variables including `PYTHONPATH`
 
 Python module
 =============
