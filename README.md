@@ -54,7 +54,7 @@ to the rescue):
 
     auth_opt_pyauth_module some_module
 
-#### Optional
+### Optional
 Instead of specifying the search path for Python module in `PYTHONPATH` env variable,
     Add the following line to `mosquitto.conf`:
 
