@@ -217,6 +217,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *au
     Py_XDECREF(data->security_cleanup_func);
     Py_XDECREF(data->psk_key_get_func);
     free(data->module_name);
+    free(data->module_path);
     free(data);
     return MOSQ_ERR_SUCCESS;
 }
