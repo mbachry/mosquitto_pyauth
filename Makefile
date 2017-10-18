@@ -7,13 +7,13 @@ CFLAGS = -std=gnu99 -fPIC -I../lib -I../src `$(PYTHON_CONFIG) --includes` -Wall 
 ifdef DEBUG
 CFLAGS += -DPYAUTH_DEBUG -O0 -ggdb3
 endif
-LIBS = `$(PYTHON_CONFIG) --libs` -lmosquitto -lcares
+LIBS = `$(PYTHON_CONFIG) --libs` -lmosquitto
 DESTDIR = /usr
 
 CFLAGS += -I$(MOSQUITTO_SRC)/src/
 CFLAGS += -I$(MOSQUITTO_SRC)/lib/
 
-#LDFLAGS =-lmosquitto 
+#LDFLAGS =-lmosquitto
 LDFLAGS += -L$(MOSQUITTO_SRC)/lib/
 
 all : auth_plugin_pyauth.so
