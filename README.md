@@ -16,7 +16,9 @@ You must either have mosquitto header files installed globally in
 mosquitto source directory. Then:
 
     cd mosquitto_pyauth
-    make
+    make USE_CARES=1
+
+Remove `USE_CARES` if c-ares library isn't installed in your system.
 
 Alternatively you can pass full path to mosquitto sources using
 `MOSQUITTO_SRC` variable:

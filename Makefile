@@ -10,6 +10,10 @@ endif
 LIBS = `$(PYTHON_CONFIG) --libs` -lmosquitto
 DESTDIR = /usr
 
+ifdef USE_CARES
+LIBS += -lcares
+endif
+
 CFLAGS += -I$(MOSQUITTO_SRC)/src/
 CFLAGS += -I$(MOSQUITTO_SRC)/lib/
 
