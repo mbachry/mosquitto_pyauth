@@ -69,9 +69,25 @@ static PyObject *pyauth_mosquitto_topic_matches_sub(PyObject *self unused, PyObj
     return PyBool_FromLong(res);
 }
 
+static PyObject *pyauth_mosquitto_log_printf(PyObject *self unused, PyObject *args)
+{
+    int loglevel;
+    char *fmt;
+
+    if (!PyArg_ParseTuple(args, "is", &loglevel, &fmt))
+    return NULL;
+
+    mosquitto_log_printf(loglevel, "%s", fmt);
+
+    Py_RETURN_NONE;
+}
+
+
 static PyMethodDef methods[] = {
     {"topic_matches_sub", pyauth_mosquitto_topic_matches_sub, METH_VARARGS,
      "Check whether a topic matches a subscription"},
+     {"log", pyauth_mosquitto_log_printf, METH_VARARGS,
+     "Log a message into mosquitto's log"},
     {NULL, NULL, 0, NULL}
 };
 
@@ -96,6 +112,15 @@ static PyObject *init_aux_module(void)
     PyModule_AddIntConstant(module, "MOSQ_ACL_NONE", MOSQ_ACL_NONE);
     PyModule_AddIntConstant(module, "MOSQ_ACL_READ", MOSQ_ACL_READ);
     PyModule_AddIntConstant(module, "MOSQ_ACL_WRITE", MOSQ_ACL_WRITE);
+
+    /* loglevel */
+    PyModule_AddIntConstant(module, "LOG_INFO", MOSQ_LOG_INFO);
+    PyModule_AddIntConstant(module, "LOG_NOTICE", MOSQ_LOG_NOTICE);
+    PyModule_AddIntConstant(module, "LOG_WARNING", MOSQ_LOG_WARNING);
+    PyModule_AddIntConstant(module, "LOG_ERR", MOSQ_LOG_ERR);
+    PyModule_AddIntConstant(module, "LOG_DEBUG", MOSQ_LOG_DEBUG);
+    PyModule_AddIntConstant(module, "LOG_SUBSCRIBE", MOSQ_LOG_SUBSCRIBE);
+    PyModule_AddIntConstant(module, "LOG_UNSUBSCRIBE", MOSQ_LOG_UNSUBSCRIBE);
 
     return module;
 }

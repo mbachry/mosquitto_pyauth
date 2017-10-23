@@ -100,12 +100,22 @@ The module provides following function:
   function checks whether `topic` matches given `sub` pattern (for
   example, it returns `True` if `sub` is `/foo/#` and `topic` is
   `/foo/bar`) and is mostly useful is `acl_check` function above
+* `log(loglevel, message)`: log `message` into mosquitto's log
+  file with the given `loglevel` (one of the constants below).
 
 The following constants for `access` parameter in `acl_check` are
 provided:
 
 * `MOSQ_ACL_NONE`
-
 * `MOSQ_ACL_READ`
-
 * `MOSQ_ACL_WRITE`
+
+The following constants for `loglevel` parameter in `log` are provided:
+
+* `LOG_INFO`
+* `LOG_NOTICE`
+* `LOG_WARNING`
+* `LOG_ERR`
+* `LOG_DEBUG`
+* `LOG_SUBSCRIBE` (not recommended for use by plugins)
+* `LOG_UNSUBSCRIBE` (not recommended for use by plugins)
