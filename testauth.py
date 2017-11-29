@@ -4,7 +4,7 @@ import mosquitto_auth
 def plugin_init(opts):
     mosquitto_auth.log(
         mosquitto_auth.LOG_DEBUG,
-        'plugin_init (opts: %r)' % (opts)
+        'plugin_init (opts: %r)' % (opts,)
     )
 
 
