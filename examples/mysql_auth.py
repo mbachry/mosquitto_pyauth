@@ -45,7 +45,6 @@
 
 import hashlib
 import pymysql
-import collections
 import encodings.idna
 
 mysql_conn = None
