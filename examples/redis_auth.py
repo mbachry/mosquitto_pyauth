@@ -10,7 +10,6 @@
 
 import hashlib
 import redis
-import mosquitto_auth
 
 redis_conn = None
 
@@ -33,7 +32,9 @@ def unpwd_check(username, password):
     print('AUTH: user=%s, password matches = %s' % (username, ok))
     return ok
 
-def acl_check(clientid, username, topic, access):
+def acl_check(client_id, username, topic, access, payload):
+    import mosquitto_auth
+
     if username is None:
         print('AUTH required')
         return False
@@ -42,7 +43,7 @@ def acl_check(clientid, username, topic, access):
         print('ACL: no such user:', username)
         return False
     matches = mosquitto_auth.topic_matches_sub(pat.decode(), topic)
-    print('ACL: user=%s topic=%s, matches = %s' % (username, topic, matches))
+    print('ACL: user=%s topic=%s, matches = %s, payload = %r' % (username, topic, matches, payload))
     return matches
 
 

@@ -6,9 +6,16 @@
 #include <Python.h>
 #include <mosquitto.h>
 #include <mosquitto_plugin.h>
+#include <mosquitto_broker.h>
 
-#if !defined(LIBMOSQUITTO_VERSION_NUMBER) || LIBMOSQUITTO_VERSION_NUMBER < 1002001
-#error "mosquitto 1.2.1 or higher is required"
+#if !defined(LIBMOSQUITTO_VERSION_NUMBER) || LIBMOSQUITTO_VERSION_NUMBER < 1005001
+#error "mosquitto 1.5.1 or higher is required"
+#endif
+
+#if PY_MAJOR_VERSION >= 3
+#define PY_BUILD_BYTES  "y"
+#else
+#define PY_BUILD_BYTES  "s"
 #endif
 
 struct pyauth_data {
@@ -75,7 +82,7 @@ static PyObject *pyauth_mosquitto_log_printf(PyObject *self unused, PyObject *ar
     char *fmt;
 
     if (!PyArg_ParseTuple(args, "is", &loglevel, &fmt))
-    return NULL;
+        return NULL;
 
     mosquitto_log_printf(loglevel, "%s", fmt);
 
@@ -110,6 +117,7 @@ static PyObject *init_aux_module(void)
         return NULL;
 
     PyModule_AddIntConstant(module, "MOSQ_ACL_NONE", MOSQ_ACL_NONE);
+    PyModule_AddIntConstant(module, "MOSQ_ACL_SUBSCRIBE", MOSQ_ACL_SUBSCRIBE);
     PyModule_AddIntConstant(module, "MOSQ_ACL_READ", MOSQ_ACL_READ);
     PyModule_AddIntConstant(module, "MOSQ_ACL_WRITE", MOSQ_ACL_WRITE);
 
@@ -133,7 +141,7 @@ int mosquitto_auth_plugin_version(void)
     return MOSQ_AUTH_PLUGIN_VERSION;
 }
 
-static PyObject *make_auth_opts_tuple(struct mosquitto_auth_opt *auth_opts, int auth_opt_count)
+static PyObject *make_auth_opts_tuple(struct mosquitto_opt *auth_opts, int auth_opt_count)
 {
     PyObject *optlist = PyTuple_New(auth_opt_count - 1); /* -1 because of skipped "pyauth_module" */
     if (optlist == NULL)
@@ -158,7 +166,7 @@ static PyObject *make_auth_opts_tuple(struct mosquitto_auth_opt *auth_opts, int 
     return optlist;
 }
 
-int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth_opts, int auth_opt_count)
+int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_opt *auth_opts, int auth_opt_count)
 {
     struct pyauth_data *data = calloc(1, sizeof(*data));
     assert(data != NULL);
@@ -214,7 +222,7 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_auth_opt *auth
     return MOSQ_ERR_SUCCESS;
 }
 
-int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *auth_opts unused, int auth_opt_count unused)
+int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_opt *auth_opts unused, int auth_opt_count unused)
 {
     struct pyauth_data *data = user_data;
 
@@ -239,7 +247,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_auth_opt *au
     return MOSQ_ERR_SUCCESS;
 }
 
-int mosquitto_auth_security_init(void *user_data, struct mosquitto_auth_opt *auth_opts, int auth_opt_count, bool reload)
+int mosquitto_auth_security_init(void *user_data, struct mosquitto_opt *auth_opts, int auth_opt_count, bool reload)
 {
     struct pyauth_data *data = user_data;
 
@@ -271,7 +279,7 @@ err_no_optlist:
     return MOSQ_ERR_UNKNOWN;
 }
 
-int mosquitto_auth_security_cleanup(void *user_data, struct mosquitto_auth_opt *auth_opts unused, int auth_opt_count unused, bool reload)
+int mosquitto_auth_security_cleanup(void *user_data, struct mosquitto_opt *auth_opts unused, int auth_opt_count unused, bool reload)
 {
     struct pyauth_data *data = user_data;
 
@@ -292,14 +300,23 @@ int mosquitto_auth_security_cleanup(void *user_data, struct mosquitto_auth_opt *
     return MOSQ_ERR_SUCCESS;
 }
 
-int mosquitto_auth_acl_check(void *user_data, const char *clientid, const char *username, const char *topic, int access)
+int mosquitto_auth_acl_check(void *user_data, int access, const struct mosquitto *client, const struct mosquitto_acl_msg *msg)
 {
     struct pyauth_data *data = user_data;
 
     if (data->acl_check_func == NULL)
         return MOSQ_ERR_ACL_DENIED;
 
-    PyObject *res = PyObject_CallFunction(data->acl_check_func, "sssi", clientid, username, topic, access);
+    const char *client_id = mosquitto_client_id(client);
+    const char *username = mosquitto_client_username(client);
+
+    PyObject *res = PyObject_CallFunction(data->acl_check_func, "sssi" PY_BUILD_BYTES "#",
+                                          client_id,
+                                          username,
+                                          msg->topic,
+                                          access,
+                                          msg->payload,
+                                          msg->payloadlen);
     if (res == NULL) {
         PyErr_Print();
         return MOSQ_ERR_UNKNOWN;
@@ -310,7 +327,7 @@ int mosquitto_auth_acl_check(void *user_data, const char *clientid, const char *
     return ok ? MOSQ_ERR_SUCCESS : MOSQ_ERR_ACL_DENIED;
 }
 
-int mosquitto_auth_unpwd_check(void *user_data, const char *username, const char *password)
+int mosquitto_auth_unpwd_check(void *user_data, const struct mosquitto *client unused, const char *username, const char *password)
 {
     struct pyauth_data *data = user_data;
 
@@ -334,7 +351,12 @@ int mosquitto_auth_unpwd_check(void *user_data, const char *username, const char
     return ok ? MOSQ_ERR_SUCCESS : MOSQ_ERR_AUTH;
 }
 
-int mosquitto_auth_psk_key_get(void *user_data, const char *hint, const char *identity, char *key, int max_key_len)
+int mosquitto_auth_psk_key_get(void *user_data,
+                               const struct mosquitto *client unused,
+                               const char *hint,
+                               const char *identity,
+                               char *key,
+                               int max_key_len)
 {
     struct pyauth_data *data = user_data;
     char psk[max_key_len];

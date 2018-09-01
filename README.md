@@ -6,7 +6,7 @@ Mosquitto auth plugin that lets you write your auth plugins in Python.
 Compiling
 =========
 
-You need mosquitto version 1.2.1 or higher.
+You need mosquitto version 1.5.1 or higher.
 
 Make sure you have Python dev package installed (`apt-get install
 python-dev` or `apt-get install python3-dev` under Debian/Ubuntu).
@@ -26,9 +26,9 @@ Alternatively you can pass full path to mosquitto sources using
     make MOSQUITTO_SRC=/path/to/mosquitto-src
 
 Pass `PYTHON_VERSION` variable to compile with other other Python
-version than default (2.7):
+version than default (3.6):
 
-    make PYTHON_VERSION=3.6
+    make PYTHON_VERSION=2.7
 
 If all goes ok, there should be `auth_plugin_pyauth.so` file in the
 current directory. Copy it under path accessible for mosquitto daemon,
@@ -41,7 +41,7 @@ Just check the file `/usr/lib/libmosquitto.so` or `/usr/lib/mosquitto.so.1` exis
 
     ln -s /usr/lib/libmosquitto.so.1 /usr/lib/libmosquitto.so
 
-And make again the plugin. This time should work.
+And make again the plugin. This time it should work.
 
 Running
 =======
@@ -71,11 +71,13 @@ and provide following global functions:
 * `unpwd_check(username, password)`: return `True` if given
   username and password pair is allowed to log in
 
-* `acl_check(clientid, username, topic, access)`: return `True` if
-  given user is allowed to subscribe (`access =
+* `acl_check(client_id, username, topic, access, payload)`: return
+  `True` if given user is allowed to subscribe (`access =
+  mosquitto_auth.MOSQ_ACL_SUBSCRIBE`), read (`access =
   mosquitto_auth.MOSQ_ACL_READ`) or publish (`access =
   mosquitto_auth.MOSQ_ACL_WRITE`) to given topic (see `mosquitto_auth`
-  module below)
+  module below). `payload` argument holds message payload as bytes, or
+  `None` if not applicable.
 
 * `psk_key_get(identity, hint)`: return `PSK` string (in hex format without heading 0x) if given
   identity and hint pair is allowed to connect else return `False` or `None`
@@ -107,6 +109,7 @@ The following constants for `access` parameter in `acl_check` are
 provided:
 
 * `MOSQ_ACL_NONE`
+* `MOSQ_ACL_SUBSCRIBE`
 * `MOSQ_ACL_READ`
 * `MOSQ_ACL_WRITE`
 
