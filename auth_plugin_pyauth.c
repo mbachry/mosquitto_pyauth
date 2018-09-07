@@ -20,6 +20,7 @@
 
 struct pyauth_data {
     char *module_name;
+    char *module_path;
     PyObject *module;
     PyObject *plugin_cleanup_func;
     PyObject *unpwd_check_func;
@@ -176,6 +177,9 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_opt *auth_opts
             data->module_name = strdup(auth_opts[i].value);
             debug("pyauth_module = %s", data->module_name);
         }
+        else if (!strcmp(auth_opts[i].key, "pyauth_module_path")) {
+            data->module_path = strdup(auth_opts[i].value);
+        }
     }
     if (data->module_name == NULL)
         die(false, "pyauth_module config param missing");
@@ -190,6 +194,9 @@ int mosquitto_auth_plugin_init(void **user_data, struct mosquitto_opt *auth_opts
         die(false, "failed to initialize auxiliary module");
 #endif
 
+    if(data->module_path != NULL){
+        PySys_SetPath(data->module_path);
+    }
     data->module = PyImport_ImportModule(data->module_name);
     if (data->module == NULL)
         die(true, "failed to import module: %s", data->module_name);
@@ -243,6 +250,7 @@ int mosquitto_auth_plugin_cleanup(void *user_data, struct mosquitto_opt *auth_op
     Py_XDECREF(data->security_cleanup_func);
     Py_XDECREF(data->psk_key_get_func);
     free(data->module_name);
+    free(data->module_path);
     free(data);
     return MOSQ_ERR_SUCCESS;
 }
